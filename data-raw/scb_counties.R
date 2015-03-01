@@ -22,8 +22,8 @@ slot(sp03, "data") <- slot(sp03, "data") %>%
 sp_diff <- subset(sp03, LNKOD %in% c("03", "19"))
 sp_diff <- spChFIDs(sp_diff, paste0(sp_diff$LNKOD, sp_diff$tom))
 sp07    <- spChFIDs(sp07, paste0(sp07$LNKOD, sp07$tom))
-swe_county <- spRbind(sp_diff, sp07)
-colnames(swe_county@data) <- tolower(colnames(swe_county@data))
-swe_county@data$id <- rownames(swe_county@data)
+swe_counties <- spRbind(sp_diff, sp07)
+colnames(swe_counties@data) <- tolower(colnames(swe_counties@data))
+swe_counties@data$id <- rownames(swe_counties@data)
 
-use_data(swe_county, overwrite = TRUE)
+use_data(swe_counties, overwrite = TRUE)
