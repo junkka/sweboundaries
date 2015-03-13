@@ -24,6 +24,7 @@ sp_diff <- spChFIDs(sp_diff, paste0(sp_diff$LNKOD, sp_diff$tom))
 sp07    <- spChFIDs(sp07, paste0(sp07$LNKOD, sp07$tom))
 swe_counties <- spRbind(sp_diff, sp07)
 colnames(swe_counties@data) <- tolower(colnames(swe_counties@data))
-swe_counties@data$id <- rownames(swe_counties@data)
+swe_counties@data$geomid <- rownames(swe_counties@data)
+slot(swe_counties, "polygons") <- sapply(slot(swe_counties, "polygons"), checkPolygonsHoles)
 
 use_data(swe_counties, overwrite = TRUE)
