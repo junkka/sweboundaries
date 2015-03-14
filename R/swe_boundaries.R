@@ -33,7 +33,9 @@ swe_boundaries <- function(date,
     meta <- municipal_meta %>% 
       filter(from <= x, tom >= x)
     res <- subset(swe_municipality, geomid %in% meta$geomid)
-    slot(res, "data") <- left_join(slot(res, "data"), meta)
+    slot(res, "data") <- slot(res, "data") %>% 
+      select(geomid, area) %>% 
+      left_join(meta, by = "geomid")
   }
 
   return(switch(format,

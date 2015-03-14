@@ -1,9 +1,9 @@
 Package: sweboundaries
 Title: Swedish administrative boundaries 
-Version: 0.2
+Version: 0.3
 Authors@R: "Johan Junkka <johan.junkka@gmail.com> [aut, cre]"
-Description: A package for mapping data to Swedish administrative 
-  boundaries 1977-2008. 
+Description: R data for Swedish administrative boundaries of counties 
+  and municipalities from 1977-2008. 
 Depends: R (>= 3.1.2)
 LazyData: true
 License: MIT

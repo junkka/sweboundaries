@@ -8,6 +8,7 @@ library(rgdal)
 library(maptools)
 library(tidyr)
 library(dplyr)
+library(assertthat)
 
 sp <- readOGR(dsn = "data-raw/.temp/", layer = "Sweden_municipality07", encoding = "latin1")
 sp1 <- sp
@@ -100,28 +101,66 @@ combind_sp <- function(cname) {
 sapply(c("code98_03", "code97_97", "code95_96", "code92_94", "code83_91", "code80_82", "code77_79"), combind_sp)
 
 d <- tbl_df(slot(sp, "data")) %>% 
-  select(id, from, tom, knkod, knnamn, kod04_06:kod77_79) 
-municipal_meta <- d %>% 
+  select(id, from, tom, knkod, knnamn, kod04_06:kod77_79,bef2004, knbef96) 
+d2 <- d %>% 
   gather(period, code, kod04_06:kod77_79) %>% 
   mutate(
     from_p = str_extract(as.character(period), "kod[0-9]{2}") %>% 
       str_extract("[0-9]{2}$") %>% as.integer() %>% 
       century(),
     tom_p = str_extract(as.character(period), "[0-9]{2}$") %>% 
-      as.integer() %>% century() 
+      as.integer() %>% century(),
+      code = as.factor(code)
   ) %>% 
   group_by(knnamn, code, id) %>% 
   summarise(
     from = min(from_p),
-    tom = max(tom_p)
+    tom = max(tom_p),
+    bef2004 = first(bef2004),
+    knbef96 = first(knbef96)
   ) %>% 
-  select(knkod = code, knnamn, from, tom, geomid = id) %>% 
+  select(knkod = code, knnamn, from, tom, geomid = id, bef2004, knbef96) %>% 
   as.data.frame()
+
+pop1996 <- d2 %>% filter(from <= 1996, tom >= 1996) %>% 
+  select(knkod, pop = knbef96) %>% 
+  mutate(year = 1996)
+
+pop2004 <- d2 %>% filter(from <= 2004, tom >= 2004) %>% 
+  select(knkod, pop = knbef96) %>% 
+  mutate(year = 2004)
+
+geo_pop <- rbind(pop1996, pop2004)
+
+municipal_meta <- d2 %>% select(-bef2004, -knbef96)
 
 slot(sp, "data") <- slot(sp, "data") %>% 
   select(geomid = id, from, tom)
 
+area <- data.frame(
+    geomid = sapply(swe_municipality@polygons, function(x) x@ID),
+    area = sapply(swe_municipality@polygons, function(x) x@area)
+  )
+
+slot(sp, "data") <- slot(sp, "data") %>% 
+  left_join(area, by = "geomid")
+
 swe_municipality <- sp
 
+# for each year test
+plyr::l_ply(c(1979, 1982, 1991, 1994, 1996, 1997, 2003, 2006), function(a){
+  subd <- swe_municipality@data %>% 
+    filter(from <= a, tom >= a) 
+  test <- municipal_meta %>% 
+    filter(from <= a, tom >= a) %>% 
+    left_join(subd, ., by = "geomid")
+
+  assert_that(nrow(test) == nrow(subd)) %>% message()
+  assert_that(nrow(test[is.na(test$knkod), ]) == 0)  %>% message()
+  
+})
+
+
+save(geo_pop, file = "data/geo_pop.rda")
 save(municipal_meta, file = "data/municipal_meta.rda")
 save(swe_municipality, file = "data/swe_municipality.rda")

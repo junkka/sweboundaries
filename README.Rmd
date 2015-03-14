@@ -1,0 +1,43 @@
+---
+output:
+  md_document: 
+    variant: markdown_github
+---
+
+SweBoundaries
+======
+
+R data for Swedish administrative boundaries of counties and municipalities from 1977-2008. 
+
+```{r}
+library(sweboundaries)
+library(dplyr)
+library(ggplot2)
+
+m <- swe_boundaries(1996, "mun", "df")
+
+data(geo_pop)
+
+md <- geo_pop %>% filter(year == 1996) %>% 
+  left_join(m, ., by = "knkod") %>% 
+  mutate(
+    dens = pop/(area/100),
+    dens = cut(dens, quantile(dens), labels = c(1:4))
+    )
+knitr::kable(md %>% select(geomid:year) %>% distinct() %>% slice(1:10))
+```
+
+```{r example_map}
+ggplot(md, aes(long, lat, group = group, fill = dens)) +
+  scale_fill_brewer() +
+  geom_polygon() + coord_equal() + theme_minimal()
+```
+
+
+
+## Credits
+
+Inspired by [USAboundaries](https://github.com/ropensci/USAboundaries)
+
+Data from [SCB](http://www.gis.scb.se/how/PXmap1/index.asp)
+
